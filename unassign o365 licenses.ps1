@@ -1,14 +1,16 @@
+# Removes any o365 license from users account
+
 import-module msonline 
 Connect-MsolService 
 #CSV file picker module start 
 Function Get-FileName($initialDirectory) 
 { 
-[System.Reflection.Assembly]::LoadWithPartialName(ìSystem.windows.formsî) | 
+[System.Reflection.Assembly]::LoadWithPartialName(‚ÄúSystem.windows.forms‚Äù) | 
 Out-Null 
 
 $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog 
 $OpenFileDialog.initialDirectory = $initialDirectory 
-$OpenFileDialog.filter = ìAll files (*.*)| *.*î 
+$OpenFileDialog.filter = ‚ÄúAll files (*.*)| *.*‚Äù 
 $OpenFileDialog.ShowDialog() | Out-Null 
 $OpenFileDialog.filename 
 } 
@@ -16,7 +18,7 @@ $OpenFileDialog.filename
 #CSV file picker module end 
 
 #Variable that holds CSV file location from file picker 
-$path = Get-FileName -initialDirectory ìC:\î 
+$path = Get-FileName -initialDirectory ‚ÄúC:\‚Äù 
 
 #CSV import command and mailbox creation loop 
 import-csv $path |
