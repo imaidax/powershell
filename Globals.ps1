@@ -1,9 +1,3 @@
-﻿#--------------------------------------------
-# Declare Global Variables and Functions here
-#--------------------------------------------
-
-$loggedinas = ''
-
 function login
 {
 	#These two fields grab the text in the text boxes
@@ -32,29 +26,24 @@ function login
 		$formVERMicrosoftOffice36.Text = "VER Microsoft Office365 Tool. Logged in as $username"
 		
 		$loggedinas = $username
-		# Clear user name if you need to login as someone else for whatever reason.
-		$adminEmail.Text = ""
+
 	}
 	
 	catch
 	{
 		$output.AppendText("`nLogin Failed. Please check your credentials.")
+		#Clears password after login or failure for easier reattempt
+		$adminPassword.Text = ""
 	}
-	
-	#Clears password after login or failure for easier reattempt
-	
-	$adminPassword.Text = ""
 }
 
 function check_calendar
 {
 	try
 	{
-		$folder = '{0}:\calendar' -f $CalendarEmail.Text
-		
+		$folder = '{0}:\calendar' -f $CalendarEmail.Text	
 		$calendars = Get-MailboxFolderPermission -identity $folder | Select-Object User, AccessRights | Out-String
 		$calendars = $calendars -replace "[{}]"
-		
 		$output.Text = $calendars
 	}
 	
