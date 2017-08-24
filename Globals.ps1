@@ -1,10 +1,164 @@
-function login
+#--------------------------------------------
+# Declare Global Variables and Functions here
+#--------------------------------------------
+#region Control Helper Functions
+
+# Not my code, auto-generated from GUI tool
+function Update-ComboBox
 {
-	#These two fields grab the text in the text boxes
+<#
+	.SYNOPSIS
+		This functions helps you load items into a ComboBox.
 	
-	$username = $adminEmail.Text
-	$password = $adminPassword.Text
+	.DESCRIPTION
+		Use this function to dynamically load items into the ComboBox control.
 	
+	.PARAMETER ComboBox
+		The ComboBox control you want to add items to.
+	
+	.PARAMETER Items
+		The object or objects you wish to load into the ComboBox's Items collection.
+	
+	.PARAMETER DisplayMember
+		Indicates the property to display for the items in this control.
+	
+	.PARAMETER Append
+		Adds the item(s) to the ComboBox without clearing the Items collection.
+	
+	.EXAMPLE
+		Update-ComboBox $combobox1 "Red", "White", "Blue"
+	
+	.EXAMPLE
+		Update-ComboBox $combobox1 "Red" -Append
+		Update-ComboBox $combobox1 "White" -Append
+		Update-ComboBox $combobox1 "Blue" -Append
+	
+	.EXAMPLE
+		Update-ComboBox $combobox1 (Get-Process) "ProcessName"
+	
+	.NOTES
+		Additional information about the function.
+#>
+	
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNull()]
+		[System.Windows.Forms.ComboBox]$ComboBox,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNull()]
+		$Items,
+		[Parameter(Mandatory = $false)]
+		[string]$DisplayMember,
+		[switch]$Append
+	)
+	
+	if (-not $Append)
+	{
+		$ComboBox.Items.Clear()
+	}
+	
+	if ($Items -is [Object[]])
+	{
+		$ComboBox.Items.AddRange($Items)
+	}
+	elseif ($Items -is [System.Collections.IEnumerable])
+	{
+		$ComboBox.BeginUpdate()
+		foreach ($obj in $Items)
+		{
+			$ComboBox.Items.Add($obj)
+		}
+		$ComboBox.EndUpdate()
+	}
+	else
+	{
+		$ComboBox.Items.Add($Items)
+	}
+	
+	$ComboBox.DisplayMember = $DisplayMember
+}
+
+#also auto-generated
+function Update-ListBox
+{
+<#
+	.SYNOPSIS
+		This functions helps you load items into a ListBox or CheckedListBox.
+	
+	.DESCRIPTION
+		Use this function to dynamically load items into the ListBox control.
+	
+	.PARAMETER ListBox
+		The ListBox control you want to add items to.
+	
+	.PARAMETER Items
+		The object or objects you wish to load into the ListBox's Items collection.
+	
+	.PARAMETER DisplayMember
+		Indicates the property to display for the items in this control.
+	
+	.PARAMETER Append
+		Adds the item(s) to the ListBox without clearing the Items collection.
+	
+	.EXAMPLE
+		Update-ListBox $ListBox1 "Red", "White", "Blue"
+	
+	.EXAMPLE
+		Update-ListBox $listBox1 "Red" -Append
+		Update-ListBox $listBox1 "White" -Append
+		Update-ListBox $listBox1 "Blue" -Append
+	
+	.EXAMPLE
+		Update-ListBox $listBox1 (Get-Process) "ProcessName"
+	
+	.NOTES
+		Additional information about the function.
+#>
+	
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNull()]
+		[System.Windows.Forms.ListBox]$ListBox,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNull()]
+		$Items,
+		[Parameter(Mandatory = $false)]
+		[string]$DisplayMember,
+		[switch]$Append
+	)
+	
+	if (-not $Append)
+	{
+		$listBox.Items.Clear()
+	}
+	
+	if ($Items -is [System.Windows.Forms.ListBox+ObjectCollection] -or $Items -is [System.Collections.ICollection])
+	{
+		$listBox.Items.AddRange($Items)
+	}
+	elseif ($Items -is [System.Collections.IEnumerable])
+	{
+		$listBox.BeginUpdate()
+		foreach ($obj in $Items)
+		{
+			$listBox.Items.Add($obj)
+		}
+		$listBox.EndUpdate()
+	}
+	else
+	{
+		$listBox.Items.Add($Items)
+	}
+	
+	$listBox.DisplayMember = $DisplayMember
+}
+#endregion
+
+# Login function, will update to take arguments.
+function login($username,$password)
+{
 	#This takes the password and converts it to a secure string (Despite it already being so) and making it usable for automatic login.
 	$pass = ConvertTo-SecureString -String $password -AsPlainText -Force
 	$cred = New-Object -TypeName System.Management.Automation.PSCredential($username, $pass)
@@ -24,26 +178,26 @@ function login
 		$you = $you -replace ".*=" -replace "}"
 		$output.AppendText("`nLogin Succeeded.`nWelcome back $you")
 		$formVERMicrosoftOffice36.Text = "VER Microsoft Office365 Tool. Logged in as $username"
-		
-		$loggedinas = $username
-
 	}
 	
 	catch
 	{
 		$output.AppendText("`nLogin Failed. Please check your credentials.")
-		#Clears password after login or failure for easier reattempt
+		#Clears password after login or failure for easier reattempt	
 		$adminPassword.Text = ""
-	}
+	}	
+
 }
 
 function check_calendar
 {
 	try
 	{
-		$folder = '{0}:\calendar' -f $CalendarEmail.Text	
+		$folder = '{0}:\calendar' -f $CalendarEmail.Text
+		
 		$calendars = Get-MailboxFolderPermission -identity $folder | Select-Object User, AccessRights | Out-String
 		$calendars = $calendars -replace "[{}]"
+		
 		$output.Text = $calendars
 	}
 	
@@ -156,18 +310,15 @@ function terminate_user
 		$output.AppendText("`nRemoving user from all Distribution Groups...")
 		try
 		{
-			(Get-ADUser $alias -Properties MemberOf).memberOf |
-			ForEach-Object {
-				Remove-ADGroupMember -Identity $_ -Members $alias -Confirm $False
-			}
+			Get-ADPrincipalGroupMembership -Identity $alias | where { $_.Name -notlike "Domain Users" } | % {Remove-ADPrincipalGroupMembership -Identity $alias -MemberOf $_ -Confirm:$false}
 		}
 		catch
 		{
-			$output.AppendText("`nError. Probably failed to remove from Domain Users. Double check to be sure.")
+			$output.AppendText("`nError occured, group removal failed. Please manually remove from groups.")
 		}
 	}
-	
-	If ($ChangePasswordOption.Checked -eq $True)
+
+	if ($ChangePasswordOption.Checked -eq $True)
 	{
 		$output.AppendText("`nGenerating randomized password and applying...")
 		#Randomize Change Password 10 random characters, 5 integers, 10 more characters.
@@ -179,8 +330,7 @@ function terminate_user
 		$newpass = ConvertTo-SecureString -String $newpass -AsPlainText -Force
 		Set-ADAccountPassword -Identity $alias -NewPassword $newpass
 	}
-		
-	If ($RemoveLicenseOption.Checked -eq $True)
+	if ($RemoveLicenseOption.Checked -eq $True)
 	{
 		#Remove any licenses assigned, all of em.
 		try
@@ -198,17 +348,17 @@ function terminate_user
 		$output.AppendText("done.")
 	}
 	
-	If ($DisableASOWAOption.Checked -eq $True)
+	if ($DisableASOWAOption.Checked -eq $True)
 	{
 		#Disable ActiveSync and OWA for Mobile Devices
 		$output.AppendText("`nDisabling ActiveSync and OWA for MobileDevices...")
-		Set-CASMailbox $alias -OWAEnabled $false -PopEnabled $false
-		
-		#Moves to Disabled User Accounts OU
-		$output.AppendText("done.`nMoving to Disabled User Accounts OU...")
-		$DisabledOU = "OU=Disabled User Accounts,DC=sales,DC=verrents,DC=com"
-		Get-ADUser $alias | Move-AdObject -TargetPath $DisabledOU
+		Set-CASMailbox -Identity $termedUser -OWAEnabled $false -PopEnabled $false -OWAforDevicesEnabled $false -ActiveSyncEnabled $false
 	}
+	
+	#Moves to Disabled User Accounts OU
+	$output.AppendText("done.`nMoving to Disabled User Accounts OU...")
+	$DisabledOU = "OU=Disabled User Accounts,DC=sales,DC=verrents,DC=com"
+	Get-ADUser $alias | Move-AdObject -TargetPath $DisabledOU
 	
 	#Saves a log of work done
 	$output.AppendText("done.`n$termedUser has been disabled.")
@@ -225,5 +375,7 @@ function terminate_user
 	$output.text | Out-File "\\dc1archive01\UTL\$filename.txt"
 	$now = Get-Date
 	Add-Content "\\dc1archive01\UTL\$filename.txt" "`nTermination carried out by $loggedInAs on $now"
-	
 }
+
+
+
