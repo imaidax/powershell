@@ -157,8 +157,10 @@ function Update-ListBox
 #endregion
 
 # Login function, will update to take arguments.
-function login($username,$password)
+function login
 {
+	$username = $adminEmail.Text
+	$password = $adminPassword.Text
 	#This takes the password and converts it to a secure string (Despite it already being so) and making it usable for automatic login.
 	$pass = ConvertTo-SecureString -String $password -AsPlainText -Force
 	$cred = New-Object -TypeName System.Management.Automation.PSCredential($username, $pass)
