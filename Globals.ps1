@@ -4,35 +4,6 @@
 
 $loggedinas = ''
 
-#Sample function that provides the location of the script
-function Get-ScriptDirectory
-{
-<#
-	.SYNOPSIS
-		Get-ScriptDirectory returns the proper location of the script.
-
-	.OUTPUTS
-		System.String
-	
-	.NOTES
-		Returns the correct path within a packaged executable.
-#>
-	[OutputType([string])]
-	param ()
-	if ($null -ne $hostinvocation)
-	{
-		Split-Path $hostinvocation.MyCommand.path
-	}
-	else
-	{
-		Split-Path $script:MyInvocation.MyCommand.Path
-	}
-}
-
-#Sample variable that provides the location of the script
-[string]$ScriptDirectory = Get-ScriptDirectory
-
-
 function login
 {
 	#These two fields grab the text in the text boxes
@@ -219,8 +190,7 @@ function terminate_user
 		$newpass = ConvertTo-SecureString -String $newpass -AsPlainText -Force
 		Set-ADAccountPassword -Identity $alias -NewPassword $newpass
 	}
-	
-	
+		
 	If ($RemoveLicenseOption.Checked -eq $True)
 	{
 		#Remove any licenses assigned, all of em.
@@ -267,8 +237,4 @@ function terminate_user
 	$now = Get-Date
 	Add-Content "\\dc1archive01\UTL\$filename.txt" "`nTermination carried out by $loggedInAs on $now"
 	
-	
 }
-
-
-
