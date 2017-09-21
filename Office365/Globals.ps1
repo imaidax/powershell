@@ -170,7 +170,7 @@ function Update-ListBox
 #endregion
 
 
-$UpcomingFeaturesMsg = @"
+$UpcomingFeaturesMsg =@"
 Expanded Calendar Permissions`n
 Start SharePoint Integration and Management`n
 "@
@@ -182,72 +182,65 @@ $needed = 0
 #------------------------
 # End Global Variables
 #------------------------
+if (!(Test-Path "$ScriptDirectory\settings.cfg"))
+{
+	New-Item -Path $ScriptDirectory -Name settings.cfg -Type "file" -Value ""
+	$Output.AppendText("`nSettings file was not found, it has since been created.")
+}
+Else
+{
+	$setvar = [pscustomobject](Get-Content "$ScriptDirectory\settings.cfg" -Raw | ConvertFrom-StringData)
+	$global:MSOLAccount = $setvar.msolaccount
+	$global:syncServer = $setvar.server
+}
 
 function login{
-		$username = $adminEmail.Text
-		$password = $adminPassword.Text
-		#These two fields grab the text in the text boxes
-		#This takes the password and converts it to a secure string (Despite it already being so) and making it usable for automatic login.
-		$pass = ConvertTo-SecureString -String $password -AsPlainText -Force
-		$cred = New-Object -TypeName System.Management.Automation.PSCredential($username, $pass)
-		try
-		{
-			#Connect to Office365 Tenant
-			$output.AppendText("`nAttemping login as $username to Office365 Tenant..")
-			$Office365Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $cred -Authentication Basic -AllowRedirection -Name 'Office 365'
-			Import-PSSession -session $Office365Session
-			#Connect to Azure Tenant
-			$output.AppendText("Success.`nAttempting login into Azure Active Directory..")
-			Connect-MsolService -Credential $cred
+	$username = $adminEmail.Text
+	$password = $adminPassword.Text
+	#These two fields grab the text in the text boxes
+	#This takes the password and converts it to a secure string (Despite it already being so) and making it usable for automatic login.
+	$pass = ConvertTo-SecureString -String $password -AsPlainText -Force
+	$cred = New-Object -TypeName System.Management.Automation.PSCredential($username, $pass)
+	try
+	{
+		#Connect to Office365 Tenant
+		$output.AppendText("`nAttemping login as $username to Office365 Tenant..")
+		$Office365Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $cred -Authentication Basic -AllowRedirection -Name 'Office 365'
+		Import-PSSession -session $Office365Session
+		#Connect to Azure Tenant
+		$output.AppendText("Success.`nAttempting login into Azure Active Directory..")
+		Connect-MsolService -Credential $cred
 		
-		# Connect to On-Prem
-			If ($LoginOnPrem.Checked -eq $True)
-			{
-				$output.AppendText("Success.`nAttempting login to Local Exchange Server..")
-				$OnPremSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://$syncServer/PowerShell/ -Credential $cred -Authentication Kerberos -Name 'On Prem Session'
-				Import-PSSession -session $OnPremSession
-				# Succesful Login / Welcome & Titlebar Change 
-			}
-		
-			[console]::beep(900, 350)
-			[console]::beep(1000, 350)
-			[console]::beep(800, 350)
-			[console]::beep(400, 350)
-			[console]::beep(600, 850)
-			$you = get-user -identity $username | Select-Object DisplayName
-			$you = $you -replace ".*=" -replace "}"
-			$output.AppendText("Success.`nLogin Succeeded.`nWelcome back $you")
-			$GUI.Text = "VER Microsoft Office365 Tool. Logged in as $username"
-			$global:loggedinas = "$you"
-		While ($needed -eq 0)
+		If ($LoginOnPrem.Checked -eq $True)
 		{
-			Start-Job -Name "Login Check" -ScriptBlock {
-				{
-					$logcheck = Get-PSSession
-					if ($logcheck -eq 0)
-					{
-						$output.appendtext("`nYou have been logged out due to inactivity.")
-						$needed = 1
-					}
-					else
-					{
-						Start-Sleep -s 300
-					}
-				}
-			} | Receive-Job
+			$output.AppendText("Success.`nAttempting login to Local Exchange Server..")
+			$OnPremSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://$syncServer/PowerShell/ -Credential $cred -Authentication Kerberos -Name 'On Prem Session'
+			Import-PSSession -session $OnPremSession
+			# Succesful Login / Welcome & Titlebar Change 
 		}
-		catch
-		{
+		
+		[console]::beep(900, 350)
+		[console]::beep(1000, 350)
+		[console]::beep(800, 350)
+		[console]::beep(400, 350)
+		[console]::beep(600, 850)
+		$you = get-user -identity $username | Select-Object DisplayName
+		$you = $you -replace ".*=" -replace "}"
+		$output.AppendText("Success.`nLogin Succeeded.`nWelcome back $you")
+		$GUI.Text = "VER Microsoft Office365 Tool. Logged in as $username"
+		$global:loggedinas = "$you"
+	}
+	catch
+	{
 			$output.AppendText("`nLogin Failure")
 			[console]::beep(360, 200)
 			[console]::beep(300, 300)
 			#Clears password after login or failure for easier reattempt
 			$adminPassword.Text = ""
-			return
-		}
 	}
-	
-	function get-calendarPermissions{
+}
+
+function get-calendarPermissions{
 	try
 	{
 		$folder = '{0}:\calendar' -f $CalendarEmail.Text
