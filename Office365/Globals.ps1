@@ -1,6 +1,22 @@
 ﻿#--------------------------------------------
 # Declare Global Variables and Functions here
 #--------------------------------------------
+function Get-ScriptDirectory{
+	[OutputType([string])]
+	param ()
+	if ($null -ne $hostinvocation)
+	{
+		Split-Path $hostinvocation.MyCommand.path
+	}
+	else
+	{
+		Split-Path $script:MyInvocation.MyCommand.Path
+	}
+}
+
+#Sample variable that provides the location of the script
+[string]$ScriptDirectory = Get-ScriptDirectory
+
 #region Control Helper Functions
 
 function Update-ComboBox
@@ -159,11 +175,9 @@ Expanded Calendar Permissions`n
 Start SharePoint Integration and Management`n
 "@
 $global:loggedinas = ""
+$needed = 0
 
 #TODO: Make these loadable variables from file.
-
-$global:MSOLAccount = ""
-$global:syncServer = ""
 
 #------------------------
 # End Global Variables
@@ -185,13 +199,16 @@ function login{
 			#Connect to Azure Tenant
 			$output.AppendText("Success.`nAttempting login into Azure Active Directory..")
 			Connect-MsolService -Credential $cred
-			
-			# Connect to On-Prem
-			$output.AppendText("Success.`nAttempting login to Local Exchange Server..")
-			$OnPremSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://$syncServer/PowerShell/ -Credential $cred -Authentication Kerberos -Name 'On Prem Session'
-			Import-PSSession -session $OnPremSession
-			# Succesful Login / Welcome & Titlebar Change 
-			
+		
+		# Connect to On-Prem
+			If ($LoginOnPrem.Checked -eq $True)
+			{
+				$output.AppendText("Success.`nAttempting login to Local Exchange Server..")
+				$OnPremSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://$syncServer/PowerShell/ -Credential $cred -Authentication Kerberos -Name 'On Prem Session'
+				Import-PSSession -session $OnPremSession
+				# Succesful Login / Welcome & Titlebar Change 
+			}
+		
 			[console]::beep(900, 350)
 			[console]::beep(1000, 350)
 			[console]::beep(800, 350)
@@ -202,6 +219,22 @@ function login{
 			$output.AppendText("Success.`nLogin Succeeded.`nWelcome back $you")
 			$GUI.Text = "VER Microsoft Office365 Tool. Logged in as $username"
 			$global:loggedinas = "$you"
+		While ($needed -eq 0)
+		{
+			Start-Job -Name "Login Check" -ScriptBlock {
+				{
+					$logcheck = Get-PSSession
+					if ($logcheck -eq 0)
+					{
+						$output.appendtext("`nYou have been logged out due to inactivity.")
+						$needed = 1
+					}
+					else
+					{
+						Start-Sleep -s 300
+					}
+				}
+			} | Receive-Job
 		}
 		catch
 		{
@@ -212,9 +245,9 @@ function login{
 			$adminPassword.Text = ""
 			return
 		}
-}
-
-function get-calendarPermissions{
+	}
+	
+	function get-calendarPermissions{
 	try
 	{
 		$folder = '{0}:\calendar' -f $CalendarEmail.Text

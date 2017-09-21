@@ -1,5 +1,6 @@
 ﻿<File version="2.1">
-  <Code><![CDATA[function Main {
+  <Code><![CDATA[function Main
+{
 <#
     .SYNOPSIS
         The Main function starts the project application.
