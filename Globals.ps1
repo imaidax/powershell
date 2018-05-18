@@ -1,9 +1,60 @@
-#--------------------------------------------
-# Declare Global Variables and Functions here
-#--------------------------------------------
+﻿#region Global Variables
+function Get-ScriptDirectory{
+	[OutputType([string])]
+	param ()
+	if ($null -ne $hostinvocation)
+	{
+		Split-Path $hostinvocation.MyCommand.path
+	}
+	else
+	{
+		Split-Path $script:MyInvocation.MyCommand.Path
+	}
+}
+
+#Sample variable that provides the location of the script
+[string]$ScriptDirectory = Get-ScriptDirectory
+
+#region OU Dictionary
+
+$sites = [ordered]@{
+	'Amsterdam'			    = "OU=Amsterdam,OU=Europe,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Atlanta'				= "OU=Atlanta,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Boston'				= "OU=Boston,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Charlotte'			    = "OU=CharlotteOU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Chicago'			    = "OU=Chicago,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Dallas'				= "OU=Dallas,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Denver'				= "OU=Denver,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Detroit'				= "OU=Detroit,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Frankfurt'			    = "OU=Frankfurt,OU=Europe,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Houston'				= "OU=Houston,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Las Vegas'			    = "OU=Las Vegas,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com"
+	'London'				= "OU=London,OU=Europe,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Los Angeles LED'		= "OU=Los Angeles LED,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Los Angeles Light Lab' = "OU=Los Angeles Light Lab, OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Los Angeles Main'	    = "OU=Los Angeles Main,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Los Angeles Tech'	    = "OU=Los Angeles Tech Center,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Miami'				    = "OU=Miami,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Montreal'				= "OU=Montreal,OU=Canada,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Nashville'			    = "OU=Nashville,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'New Jersey'			= "OU=New Jersey,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'New Orleans'			= "OU=New Orleans,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'New York'				= "OU=New York,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Orange County'			= "OU=Orange County,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Orlando'				= "OU=Orlando,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Philadelphia'			= "OU=Philadelphia,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Phoenix'				= "OU=Phoenix,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'San Antonio'			= "OU=San Santonio,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'San Diego'			    = "OU=San Diego,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'San Francisco'		    = "OU=San Francisco,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Seattle'			 	= "OU=Seattle,OU=US - West,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Toronto'				= "OU=Toronto,OU=Canada,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Vancouver'			    = "OU=Vancouver,OU=Canada,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+	'Washington DC'		   	= "OU=Washington DC,OU=US - East,OU=Sites,OU=VER,DC=sales,DC=verrents,DC=com";
+}
+
 #region Control Helper Functions
 
-# Not my code, auto-generated from GUI tool
 function Update-ComboBox
 {
 <#
@@ -79,7 +130,7 @@ function Update-ComboBox
 	$ComboBox.DisplayMember = $DisplayMember
 }
 
-#also auto-generated
+
 function Update-ListBox
 {
 <#
@@ -156,11 +207,37 @@ function Update-ListBox
 }
 #endregion
 
-# Login function, will update to take arguments.
-function login
+$UpcomingFeaturesMsg = @"
+Expanded Calendar Permissions`n
+Start SharePoint Integration and Management`n
+"@
+
+$global:loggedinas = ""
+$needed = 0
+
+#endregion Global Variables
+
+#region Load Settings
+if (!(Test-Path "$ScriptDirectory\settings.cfg"))
 {
+	New-Item -Path $ScriptDirectory -Name settings.cfg -Type "file" -Value ""
+	$Output.AppendText("`nSettings file was not found, it has since been created.")
+}
+else
+{
+	$setvar = [pscustomobject](Get-Content "$ScriptDirectory\settings.cfg" -Raw | ConvertFrom-StringData)
+	$global:MSOLAccount = $setvar.msolaccount
+	$global:syncServer = $setvar.server
+}
+
+#endregion 
+
+#region Functions
+
+function login{
 	$username = $adminEmail.Text
 	$password = $adminPassword.Text
+	#These two fields grab the text in the text boxes
 	#This takes the password and converts it to a secure string (Despite it already being so) and making it usable for automatic login.
 	$pass = ConvertTo-SecureString -String $password -AsPlainText -Force
 	$cred = New-Object -TypeName System.Management.Automation.PSCredential($username, $pass)
@@ -168,31 +245,41 @@ function login
 	{
 		#Connect to Office365 Tenant
 		$output.AppendText("`nAttemping login as $username to Office365 Tenant..")
-		$Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $cred -Authentication Basic -AllowRedirection
-		Import-PSSession -session $Session
-		
+		$Office365Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $cred -Authentication Basic -AllowRedirection -Name 'Office 365'
+		Import-PSSession -session $Office365Session
 		#Connect to Azure Tenant
-		$output.AppendText("`nSuccess. Attempting signing into Azure Active Directory..")
+		$output.AppendText("Success.`nAttempting login into Azure Active Directory..")
 		Connect-MsolService -Credential $cred
 		
-		#Succesful Login / Welcome & Titlebar Change 
+
+			$output.AppendText("Success.`nAttempting login to Local Exchange Server..")
+			$OnPremSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://$syncServer/PowerShell/ -Credential $cred -Name 'On Prem Session'
+			Import-PSSession -session $OnPremSession
+			# Succesful Login / Welcome & Titlebar Change 
+		
+		
+		[console]::beep(900, 350)
+		[console]::beep(1000, 350)
+		[console]::beep(800, 350)
+		[console]::beep(400, 350)
+		[console]::beep(600, 850)
 		$you = get-user -identity $username | Select-Object DisplayName
 		$you = $you -replace ".*=" -replace "}"
-		$output.AppendText("`nLogin Succeeded.`nWelcome back $you")
-		$formVERMicrosoftOffice36.Text = "VER Microsoft Office365 Tool. Logged in as $username"
+		$output.AppendText("Success.`nLogin Succeeded.`nWelcome back $you")
+		$GUI.Text = "VER Microsoft Office365 Tool. Logged in as $username"
+		$global:loggedinas = "$you"
 	}
-	
 	catch
 	{
-		$output.AppendText("`nLogin Failed. Please check your credentials.")
-		#Clears password after login or failure for easier reattempt	
-		$adminPassword.Text = ""
-	}	
-
+			$output.AppendText("`nLogin Failure")
+			[console]::beep(360, 200)
+			[console]::beep(300, 300)
+			#Clears password after login or failure for easier reattempt
+			$adminPassword.Text = ""
+	}
 }
 
-function check_calendar
-{
+function get-calendarPermissions{
 	try
 	{
 		$folder = '{0}:\calendar' -f $CalendarEmail.Text
@@ -205,41 +292,41 @@ function check_calendar
 	
 	catch
 	{
-		$output.AppendText("Calendar not found. Check spelling or if it exists.")
+		$output.AppendText("`nCalendar not found. Check spelling or if it exists.")
 	}
 	
 }
 
-function set_calendar_permissions
-{
+function set-calendarPermissions{
 	$calendar = '{0}:\calendar' -f $CalendarEmail.Text
+	$calname = Get-Mailbox
+	$calstr = $calendaremail.text
 	$user = '{0}' -f $UserEmail.Text
-	if ($calendarSetRead.Checked -eq $true)
+	if ($calendarPermissions.SelectedIndex -eq 0)
 	{
-		$output.AppendText("`nAdding Read Permissions to $user")
+		$output.AppendText("`nAdding Read Permissions to $user on $calstr")
 		Add-MailboxFolderPermission -identity $calendar -user $user -AccessRights "Reviewer"
-		check_calendar
+		get-calendarPermissionsu
 	}
 	
-	elseif ($calendarSetWrite.Checked -eq $True)
+	elseif ($calendarPermissions.SelectedIndex -eq 1)
 	{
-		$output.AppendText("`r adding Read Permissions to $user")
+		$output.AppendText("`rAssigning Edit Permissions to $user on $calstr")
 		Add-MailboxFolderPermission -identity $calendar -user $user -AccessRights "Editor"
-		check_calendar
+		get-calendarPermissions
 	}
 	
-	elseif ($calendarSetOwner.Checked -eq $true)
+	elseif ($calendarPermissions.SelectedIndex -eq 2)
 	{
-		$output.AppendText("`nAdding Read Permissions to $user")
+		$output.AppendText("`nAdding Owner Permissions to $user on $calstr")
 		Add-MailboxFolderPermission -identity $calendar -user $user -AccessRights "Owner"
-		check_calendar
+		get-calendarPermissions
 	}
 	
-	elseif ($calendarSetRemove.Checked -eq $True)
+	elseif ($calendarPermissions.SelectedIndex -eq 3)
 	{
-		$output.AppendText("`nRemoving permissions from $user")
 		Remove-MailboxFolderPermission -identity $calendar -user $user
-		$output.AppendText("`nPermissions from $user removed from $calendar")
+		$output.AppendText("`nPermissions from $user removed from $calstr")
 	}
 	
 	else
@@ -248,9 +335,90 @@ function set_calendar_permissions
 	}
 }
 
-function terminate_user
-{
-	#Get User Names
+function generate-password([string]$strong){
+	If ($strong -match "Domain")
+	{
+		#$output.AppendText("`nGenerating randomized password and applying... ")
+		$a = -join ((64 .. 90) + (97 .. 122) | Get-Random -Count 6 | %{ [char]$_ }) #<-- Random letters. Picks an integer between 65 and 90(lower) and 97-122(caps) and then matches that to its ASCII code in char to generate a letter. 
+		$b = (0000 .. 9999) | Get-Random -Count 1
+		$password = $a + $b
+		$CreateUserDomainPW.Text = $password
+		return $password
+	}
+	Elseif ($strong -eq "Strong")
+	{
+		$password = -join ((48 .. 57) + (63) + (64 .. 90) + (33) + (35 .. 38) + (40 .. 43) + (97 .. 122) | Get-Random -Count 16 | %{ [char]$_ })
+		return $password
+	}
+	elseif ($strong -eq "REV")
+	{
+		$a = (1000 .. 9999) | Get-Random -Count 1 #<-- Random lumber, between 1000-9999. Only run once.
+		$b = -join ((35 .. 38) + (40 .. 43) + (63 .. 64) + 33 | Get-Random -Count 2 | %{ [char]$_ })
+		$c = "Video"
+		$password = $a.ToString() + $b.ToString() + $c
+		$CreateUserREVPW.Text = $password
+		return $password
+	}
+
+	elseif ($strong -ge 1 -and $strong -le 65)
+	{
+		$a = -join ((48 .. 57) + (63) + (64 .. 90) + (33) + (35 .. 38) + (40 .. 43) + (97 .. 122) | Get-Random -Count $strong | %{ [char]$_ })
+		return $a
+	}
+	
+	else
+	{
+		$output.AppendText("`nInvalid Input.")
+		return
+	}
+}
+
+function Show-Inputbox{
+	Param ([string]$message=$(Throw "You must enter a prompt message"),
+		[string]$title = "Custom Password Length Generator",
+		[string]$default)
+	[reflection.assembly]::loadwithpartialname("microsoft.visualbasic") | Out-Null
+	[microsoft.visualbasic.interaction]::InputBox($message, $title, $default)
+}
+
+
+function show-error{
+	Param ([string]$message,
+	[string]$title)
+	[System.Windows.Forms.MessageBox]::Show("$message", "$title", 'OK', 'Warning')
+	
+}
+
+function create-user{
+	Param ([string]$name,
+		[string]$fn,
+		[string]$alias,
+		[string]$ln,
+		[string]$upn,
+		[string]$ou)
+	
+	$password = generate-password("Domain")
+	$revpw = generate-password("REV")
+	$pw = ConvertTo-SecureString -String $password -AsPlainText -Force
+	$smtp = "$upn@ver.com"
+	try
+	{
+		$output.AppendText("`nCreating user...")
+		New-RemoteMailbox -name $name -DisplayName $name -FirstName $fn -LastName $ln -Password $pw -UserPrincipalName $smtp -ResetPasswordOnNextLogon $true -OnPremisesOrganizationalUnit $ou -PrimarySMTPAddress $smtp -Alias $alias -RemoteRoutingAddress "$alias@ver.mail.onmicrosoft.com"
+		$output.AppendText("done.`nAdding e-mail aliases..")
+		Set-RemoteMailbox $smtp -EmailAddresses @{ add = "$smtp", "$alias@verrents.com" }
+		$output.AppendText("done.`n`nINFORMATION FOR MAILER FORM:`nCreated $name`nUPN Used: $upn`nDomain Password $password`nREV Password: $revpw`n`nLicense must be manually assigned.")
+		$output.AppendText("`nYou may DirSync to expedite the process.")
+
+	}
+	catch #epic error handling
+	{
+		$output.AppendText("`nYou're bad.")
+	}
+}
+
+function terminate-user{
+	# Get User Names
 	$termedUser = '{0}' -f $TerminatedUser.Text
 	$fwdUser = '{0}' -f $ForwardUser.Text
 	$delegUser = '{0}' -f $DelegateUser.Text
@@ -265,7 +433,7 @@ function terminate_user
 		try
 		{
 			Set-Mailbox $termedUser -ForwardingAddress $fwdUser
-			$output.AppendText("`nForwarding email from $termedUser to $fwdUser...")
+			$output.AppendText("`nForwarding email from $termedUser to $fwdUser... ")
 			
 			#Change Description
 			Set-ADUSer $alias -Description "Terminated. Email forwarding to $fwdUser"
@@ -280,11 +448,11 @@ function terminate_user
 	ElseIf ($EnableForwardingNo.Checked -eq $True)
 	{
 		#Change Description (if not forwarding)
-		$output.AppendText("done.`nChanging description...")
+		$output.AppendText("done.`nChanging description... ")
 		Set-ADUser $alias -Description "Terminated. No Licenses"
 	}
 	
-	#Checking for Delegate
+	# Checking for Delegate
 	
 	If ($DelegateAccessYes.Checked -eq $true)
 	{
@@ -296,50 +464,45 @@ function terminate_user
 	If ($DisableAccountOption.Checked -eq $true)
 	{
 		#Disable AD Account
-		$output.AppendText("`nDisabling ActiveDirectory Account...")
+		$output.AppendText("`nDisabling ActiveDirectory Account... ")
 		Disable-ADAccount $alias
 		$output.AppendText("done.")
 		
 		# Block Sign-In to Office 365 
-		$output.AppendText("`nBlocking sign-in access to Office 365...")
+		$output.AppendText("`nBlocking sign-in access to Office 365... ")
 		Set-MsolUser -UserPrincipalName $termedUser -BlockCredential $True
 		$output.AppendText("done.")
 	}
 	
 	If ($RemoveFromDGOption.Checked -eq $True)
 	{
-		#Remove from ALL Distribution Groups. 
-		$output.AppendText("`nRemoving user from all Distribution Groups...")
+		# Remove from ALL Distribution Groups. 
+		$output.AppendText("`nRemoving user from all Distribution Groups... ")
 		try
 		{
-			Get-ADPrincipalGroupMembership -Identity $alias | where { $_.Name -notlike "Domain Users" } | % {Remove-ADPrincipalGroupMembership -Identity $alias -MemberOf $_ -Confirm:$false}
+			Get-ADPrincipalGroupMembership -Identity $alias | where { $_.Name -notlike "Domain Users" } | % { Remove-ADPrincipalGroupMembership -Identity $alias -MemberOf $_ -Confirm:$false }
 		}
 		catch
 		{
 			$output.AppendText("`nError occured, group removal failed. Please manually remove from groups.")
 		}
 	}
-
+	
 	if ($ChangePasswordOption.Checked -eq $True)
 	{
-		$output.AppendText("`nGenerating randomized password and applying...")
-		#Randomize Change Password 10 random characters, 5 integers, 10 more characters.
-		$a = -join ((64 .. 90) + (97 .. 122) | Get-Random -Count 4 | %{ [char]$_ }) #<-- Random letters. Picks an integer between 65 and 90(lower) and 97-122(caps) and then matches that to its ASCII code in char to generate a letter. 
-		$b = (10000 .. 99999) | Get-Random -Count 1 #<-- Random lumber, between 10000-99999. Only run once.
-		$c = -join ((33 .. 47) | Get-Random -Count 3 | %{ [char]$_ })
-		#Converts to String!
-		$newpass = $a + $c + $b + $a
+		$output.AppendText("`nGenerating randomized password and applying... ")
+		$newpass = generate-password("Strong")
 		$newpass = ConvertTo-SecureString -String $newpass -AsPlainText -Force
 		Set-ADAccountPassword -Identity $alias -NewPassword $newpass
 	}
 	if ($RemoveLicenseOption.Checked -eq $True)
 	{
-		#Remove any licenses assigned, all of em.
+		# Remove any licenses assigned, all of em.
 		try
 		{
-			$output.appendtext("`nRemoving all Office365 Licenses...")
+			$output.appendtext("`nRemoving all Office365 Licenses... ")
 			(get-MsolUser -UserPrincipalName $termedUser).licenses.AccountSkuId |
-			foreach{
+			%{
 				Set-MsolUserLicense -UserPrincipalName $termedUser -RemoveLicenses $_
 			}
 		}
@@ -353,22 +516,29 @@ function terminate_user
 	if ($DisableASOWAOption.Checked -eq $True)
 	{
 		#Disable ActiveSync and OWA for Mobile Devices
-		$output.AppendText("`nDisabling ActiveSync and OWA for MobileDevices...")
+		$output.AppendText("`nDisabling ActiveSync and OWA for MobileDevices... ")
 		Set-CASMailbox -Identity $termedUser -OWAEnabled $false -PopEnabled $false -OWAforDevicesEnabled $false -ActiveSyncEnabled $false
 	}
+	# Hides from GAL
 	
-	#Moves to Disabled User Accounts OU
-	$output.AppendText("done.`nMoving to Disabled User Accounts OU...")
+	$user = Get-ADUser $alias -Properties *
+	$user.MsExchHideFromAddressLists = "True"
+	Set-ADUser -Instance $user
+	$output.AppendText("done.`nHiding from Global Address List... ")
+	
+	
+	# Moves to Disabled User Accounts OU
+	$output.AppendText("done.`nMoving to Disabled User Accounts OU... ")
 	$DisabledOU = "OU=Disabled User Accounts,DC=sales,DC=verrents,DC=com"
 	Get-ADUser $alias | Move-AdObject -TargetPath $DisabledOU
 	
-	#Saves a log of work done
+	# Saves a log of work done
 	$output.AppendText("done.`n$termedUser has been disabled.")
 	
-	#Then this grabs todays date in Year-Month-Day format
+	# Then this grabs todays date in Year-Month-Day format
 	$today = Get-Date -UFormat "%Y-%m-%d"
 	
-	#Then we concatenate the two together
+	# Then we concatenate the two together
 	$filename = $alias + $today
 	$output.AppendText("`nSaving termination run to log folder.")
 	
@@ -376,8 +546,120 @@ function terminate_user
 	I'll add a button later to make it at your request. or better yet, add the option to save it where you want.#>
 	$output.text | Out-File "\\dc1archive01\UTL\$filename.txt"
 	$now = Get-Date
-	Add-Content "\\dc1archive01\UTL\$filename.txt" "`nTermination carried out by $loggedInAs on $now"
+	Add-Content "\\dc1archive01\UTL\$filename.txt" "`nTermination carried out by $global:loggedinas on $now"
 }
 
+function send-email{
+	Param ([string]$name,
+		[string]$domainID,
+		[string]$domainPW,
+		[string]$revID,
+		[string]$revPW,
+		[string]$emailaddress
+	)
+	
+	$username = $adminEmail.Text
+	$password = $adminPassword.Text
+	$pass = ConvertTo-SecureString -String $password -AsPlainText -Force
+	$cred = New-Object -TypeName System.Management.Automation.PSCredential($username, $pass)
+	
+	$email = @"
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
+</head>
+<body>
+Hello $name <br>
+<br>
+Welcome to VER! This is an automated message from the VER IT department. <b>Please do not reply directly to this email.</b>
+<br>
+<br>
+Below, you'll find the basic credentials you'll need to access the various systems necessary to complete your work functions and to get set-up on payroll and with your benefits:
+<br>
+<br>
+<br>
+<b>VER Domain Credentials</b> <br>
+These credentials will allow you to access VER computers, email, and other associated services.
+<br>
+<br>
+<b>Username:</b> $domainID <br>
+<b>Temporary Password:</b> $domainPW <br>
+<br>
+Please note, this password is temporary and must be changed. In order to change it, you will need to sign into any VER computer. The computer will prompt you to change your password before you log in.
+<br>
+<br>
+<br>
+<b>REV Credentials</b> <br>
+These credentials will allow you to access REV, VER's inventory management system. You can find REV at https://rev.verrents.com.
+<br>
+<br>
+<b>Username:</b> $revID <br>
+<b>Password:</b> $revPW <br>
+<br>
+<br>
+<b>Ultipro Human Resources and Payroll System </b><br>
+<br>
+Please note that you will not have access to Ultipro until the Thursday of your first week of employment
+<br>
+<br>
+These credentials will allow you access to the Company's Human Resources and Payroll system. You will use this system to submit time sheets, request time off, view the Company newsletter, enroll in benefits, and make changes to your personal information.
+<br>
+<br>
+<b>Username:</b> $domainID ( XXX@ver.com) <br>
+<b>Default Password:</b> MMDDYYYY of birth <br>
+<br>
+<br>
+If you have any issues with these credentials, or any IT related issues, inquiries or requests moving forward, please direct those communications to
+<b>helpdesk@ver.com.</b> If you have any issues reguarding UltiPro, please contact
+<b>hr@ver.com</b> <br>
+<br>
+<br>
+<br>
+<div><img alt="Image File" src="http://www.ver.com/wp-content/themes/ver/imgs/VER_Logo2016-190.png" width="190" height="50"></div>
+<br>
+<div style="font-family: Calibri; font-weight: 400; font-size: .75em; color: #808080;">
+<span>Connect with us: </span><span><a href="https://twitter.com/verrents" style="color: #77daff; text-decoration:none; ">Twitter</a></span>
+<span>| </span><span><a href="https://www.linkedin.com/company/ver" style="color: #77daff; text-decoration:none; ">LinkedIn</a></span>
+<span>|</span> <span><a href="https://www.facebook.com/verrents" style="color: #77daff; text-decoration:none; ">Facebook</a></span>
+</div>
+<div style="font-family: Calibri; font-weight: 700; font-size: .7em; color: #3c1053;">
+<a href="http://www.ver.com" style="color: #3c1053; text-decoration:none;">ver.com</a></div>
+</body>
+</html>
 
+"@
+	
+	Send-MailMessage -From "Welcome to VER! <welcome@ver.com>" -To $emailaddress -Subject "Welcome to VER!" -BodyAsHtml -Body $email -SmtpServer smtp.office365.com -Port 587 -Credential $cred -UseSSL
+	$output.AppendText("`nMail sent to $emailaddress")
+}
 
+function get-groupdetail{
+	$GroupDescription.Text = (Get-Unifiedgroup -identity $listGroups.SelectedItem).Notes
+	$GroupOwner.Text = (Get-UnifiedGroup -Identity $listGroups.SelectedItem).ManagedBy
+	$GMems = Get-UnifiedGroupLinks $listGroups.SelectedItem -LinkType Members | Select-Object -ExpandProperty Name
+	foreach ($member in $GMems) { $GroupMembers.AppendText("`n$member") }
+	$GroupHiddenStatus.Text = (Get-UnifiedGroup $listGroups.SelectedItem).HiddenFromAddressListsEnabled
+}
+
+function run-groupoption{
+	if ($groupControlViewOption.Checked -eq $true)
+	{
+		get-groupdetail
+	}
+	
+	elseif ($groupControlHideOption.Checked -eq $True)
+	{
+		Set-UnifiedGroup $listGroups.SelectedItem -HiddenFromAddressListsEnabled = $true
+		$GroupHiddenStatus.Text = (Get-UnifiedGroup $listGroups.SelectedItem).HiddenFromAddressListsEnabled
+	}
+	
+	elseif ($groupControlDeleteOption.Checked -eq $True)
+	{
+		Remove-UnifiedGroup -Identity $listGroups.SelectedItem
+	}
+	else
+	{
+		[System.Windows.Forms.MessageBox]::Show('No action selected.', 'Pick something!', 'OK', 'Error')
+	}
+	
+}
+#endregion End Functions
